@@ -1,41 +1,52 @@
-name: Deploy to RRP
+name: Deploy branch to RRP
+description: Testing Deployments
 
-inputs:
-  edgio-deploy-token:
-    description: 'The deploy token for Edgio.'
-    required: true
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  release:
+    types: [published]
 
-runs:
-  using: "composite"
-  steps:
-  - name: Check for Edgio deploy token secret
-    if: ${{ inputs.edgio-deploy-token }} == ''
-    run: |
-      echo "You must define the 'EDGIO_DEPLOY_TOKEN' secret in GitHub project settings"
-      exit 1
-  - name: Extract branch name
-    shell: bash
-    run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')" >> $GITHUB_ENV
-  - uses: actions/checkout@v2
-  - uses: actions/setup-node@v1
-    with:
-      node-version: 14
-  - name: Cache node modules
-    uses: actions/cache@v2
+jobs:
+  deploy-to-edgio:
+    name: Deploy to Edgio
+    if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
+    runs-on: ubuntu-latest
     env:
-      cache-name: cache-node-modules
-    with:
-      path: ~/.npm
-      key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-      restore-keys: |
-        ${{ runner.os }}-build-${{ env.cache-name }}-
-        ${{ runner.os }}-build-
-        ${{ runner.os }}-
-  - name: Install packages
-    run: npm ci
-  - name: Deploy to Edgio
-    run: |
-      npm run deploy -- ${{'--branch=$BRANCH_NAME' || ''}} --token=${{ inputs.edgio-deploy-token }}  \
-      ${{github.event_name == 'push' && '--environment=default' || ''}} \
-      ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
-      ${{github.event_name == 'release' && '--environment=production' || ''}}
+      deploy_token: ${{ secrets.EDGIO_DEPLOY_TOKEN }}
+    steps:
+      - name: Check for Edgio deploy token secret
+        if: env.deploy_token == ''
+        run: |
+          echo You must define the "EDGIO_DEPLOY_TOKEN" secret in GitHub project settings
+          exit 1
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Extract branch name
+        id: extract_branch_name
+        run: echo "::set-output name=branch_name::$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')"
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+      - name: Cache node modules
+        uses: actions/cache@v2
+        id: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      - name: Install dependencies
+        run: npm ci
+      - name: Deploy to Edgio
+        run: npm run deploy -- --branch=$BRANCH_NAME --token=$deploy_token \
+             ${{ github.event_name == 'push' && '--environment=default' || '' }} \
+             ${{ github.event_name == 'pull_request' && '--environment=staging' || '' }} \
+             ${{ github.event_name == 'release' && '--environment=production' || '' }}
+        env:
+          deploy_token: ${{ secrets.EDGIO_DEPLOY_TOKEN }}
+          BRANCH_NAME: ${{ steps.extract_branch_name.outputs.branch_name }}
