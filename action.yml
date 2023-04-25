@@ -13,11 +13,11 @@ jobs:
     # cancels the deployment for the automatic merge push created when tagging a release
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
-    env:
+    with:
       deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
     steps:
       - name: Check for Edgio deploy token secret
-        if: env.deploy_token == ''
+        if: $deploy_token == ''
         run: |
           echo You must define the "EDGIO_DEPLOY_TOKEN" secret in GitHub project settings
           exit 1
@@ -48,5 +48,5 @@ jobs:
           ${{github.event_name == 'push' && '--environment=default' || ''}} \
           ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
           ${{github.event_name == 'release' && '--environment=production' || ''}}
-        env:
+        with:
           deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
