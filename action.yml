@@ -14,7 +14,7 @@ jobs:
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
     env:
-      deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
+      deploy_token: ${{ secrets.EDGIO_DEPLOY_TOKEN }}
     steps:
       - name: Check for Edgio deploy token secret
         if: env.deploy_token == ''
