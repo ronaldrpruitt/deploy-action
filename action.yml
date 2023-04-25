@@ -1,5 +1,5 @@
 name: Deploy branch to RRP
-description: Testing Deployments
+
 on:
   push:
     branches: [master, main]
@@ -13,10 +13,10 @@ jobs:
     # cancels the deployment for the automatic merge push created when tagging a release
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
+    env:
+      deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
     steps:
       - name: Check for Edgio deploy token secret
-        env:
-          deploy_token: ${{ secrets.EDGIO_DEPLOY_TOKEN }}
         if: env.deploy_token == ''
         run: |
           echo You must define the "EDGIO_DEPLOY_TOKEN" secret in GitHub project settings
@@ -39,12 +39,14 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+      - name: Install packages
+        run: npm ci # if using npm for your project
+        #  run: rm -rf node_modules && yarn install --frozen-lockfile # if using yarn for your project
       - name: Deploy to Edgio
-        env:
-          deploy_token: ${{ secrets.EDGIO_DEPLOY_TOKEN }}
-          branch_name: ${{ env.BRANCH_NAME }}
         run: |
-          npm run deploy -- ${{'--branch=' + env.branch_name || ''}} --token=$deploy_token \
-          ${{ github.event_name == 'push' && '--environment=default' || '' }} \
-          ${{ github.event_name == 'pull_request' && '--environment=staging' || '' }} \
-          ${{ github.event_name == 'release' && '--environment=production' || '' }}
+          npm run deploy -- ${{'--branch=$BRANCH_NAME' || ''}} --token=$deploy_token  \
+          ${{github.event_name == 'push' && '--environment=default' || ''}} \
+          ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
+          ${{github.event_name == 'release' && '--environment=production' || ''}}
+        env:
+          deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
