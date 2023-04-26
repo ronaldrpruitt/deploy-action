@@ -1,8 +1,8 @@
 name: Deploy branch to RRP
 description: Testing Deployments
 inputs:
-deploy_token:
-  description: 'The deploy token'
+  deploy_token:
+    description: 'The deploy token'
     required: true
 on:
   push:
@@ -18,11 +18,6 @@ jobs:
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
-      - name: Check for Edgio deploy token secret
-        if: $deploy_token == ''
-        run: |
-          echo You must define the "EDGIO_DEPLOY_TOKEN" secret in GitHub project settings
-          exit 1
       - name: Extract branch name
         shell: bash
         run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')" >> $GITHUB_ENV
@@ -46,7 +41,7 @@ jobs:
         #  run: rm -rf node_modules && yarn install --frozen-lockfile # if using yarn for your project
       - name: Deploy to Edgio
         run: |
-          npm run deploy -- ${{'--branch=$BRANCH_NAME' || ''}} --token=$deploy_token  \
+          npm run deploy -- ${{'--branch=$BRANCH_NAME' || ''}} --token=${{ inputs.deploy_token }}  \
           ${{github.event_name == 'push' && '--environment=default' || ''}} \
           ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
           ${{github.event_name == 'release' && '--environment=production' || ''}}
