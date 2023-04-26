@@ -40,7 +40,8 @@ jobs:
         run: npm ci # if using npm for your project
         #  run: rm -rf node_modules && yarn install --frozen-lockfile # if using yarn for your project
       - name: Deploy to Edgio
-        run: |
+        run: | 
+          echo "My vars: ${{ inputs.deploy_token }}"
           npm run deploy -- ${{'--branch=$BRANCH_NAME' || ''}} --token=${{ inputs.deploy_token }}  \
           ${{github.event_name == 'push' && '--environment=default' || ''}} \
           ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
