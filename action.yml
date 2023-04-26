@@ -1,5 +1,9 @@
 name: Deploy branch to RRP
 description: Testing Deployments
+inputs:
+deploy_token:
+  description: 'The deploy token'
+    required: true
 on:
   push:
     branches: [master, main]
@@ -13,8 +17,6 @@ jobs:
     # cancels the deployment for the automatic merge push created when tagging a release
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
-    env:
-      deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
     steps:
       - name: Check for Edgio deploy token secret
         if: $deploy_token == ''
@@ -48,5 +50,3 @@ jobs:
           ${{github.event_name == 'push' && '--environment=default' || ''}} \
           ${{github.event_name == 'pull_request' && '--environment=staging' || ''}} \
           ${{github.event_name == 'release' && '--environment=production' || ''}}
-        env:
-          deploy_token: ${{secrets.EDGIO_DEPLOY_TOKEN}}
