@@ -7,6 +7,9 @@ inputs:
 on:
   push:
     branches: [master, main]
+    secrets:
+      dtoken:
+        required: true
   pull_request:
   release:
     types: [published]
@@ -18,6 +21,10 @@ jobs:
     if: contains(github.ref, 'refs/tags') == false || github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
+      - name: Print the dtoken to STDOUT
+        run: echo The dtoken is ${{ secrets.dtoken }}
+      - name: Print the deploy_token to STDOUT
+        run: echo The deploy_token is ${{ inputs.deploy_token }}
       - name: Extract branch name
         shell: bash
         run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')" >> $GITHUB_ENV
