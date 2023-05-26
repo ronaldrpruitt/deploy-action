@@ -4,10 +4,10 @@ on:
     branches: [master, main]
   pull_request:
   workflow_dispatch:
-  inputs:
-      branch_name:
-        description: 'Branch Name'
-        required: false
+    inputs:
+        branch_name:
+          description: 'Branch Name'
+          required: false
 jobs:
   setup-edgio:
     name: Setup Edgio
